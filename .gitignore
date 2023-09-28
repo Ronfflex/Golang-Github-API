@@ -12,6 +12,8 @@
 .env.local
 
 /repos/*
+*.zip
+*.csv
 
 # Test binary, built with `go test -c`
 *.test

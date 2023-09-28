@@ -1,12 +1,15 @@
 package main
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -51,6 +54,13 @@ func main() {
 	fmt.Println("\nFetching all branches...")
 	for _, repo := range repos {
 		fetchAllBranches(repo)
+	}
+
+	err = zipRepositories(repos)
+    if err != nil {
+		fmt.Println("Error creating zip archive:", err)
+	} else {
+		fmt.Println("Repositories successfully archived to repos.zip")
 	}
 }
 
@@ -118,12 +128,12 @@ func storeInCSV(repos []*github.Repository) {
 func clonseRepositories(repos []*github.Repository) {
 	path := "./repos/"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-        os.Mkdir(path, 0755)
-    }
+		os.Mkdir(path, 0755)
+	}
 
 	for _, repo := range repos {
 		repoURL := repo.GetCloneURL()
-		
+
 		cmd := exec.Command("git", "clone", repoURL)
 		cmd.Dir = path
 
@@ -145,7 +155,7 @@ func detectBranchOfLatestCommit(repo *github.Repository) string {
 		fmt.Println("Error detecting branch of latest commit: " + repo.GetName())
 		return ""
 	}
-	
+
 	branch := strings.TrimSpace(string(output))
 	fmt.Println("Branch of latest commit for " + repo.GetName() + ": " + branch)
 	return branch
@@ -173,4 +183,55 @@ func fetchAllBranches(repo *github.Repository) {
 	} else {
 		fmt.Println("All branches fetched successfully: " + repo.GetName())
 	}
+}
+
+func zipRepositories(repos []*github.Repository) error {
+	if _, err := os.Stat("./repos.zip"); !os.IsNotExist(err) {
+		err = os.Remove("repos.zip")
+		if err != nil {
+			return err
+		}
+	}
+	
+	zipFile, err := os.Create("repos.zip")
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	write := zip.NewWriter(zipFile)
+	defer write.Close()
+
+	for _, repo := range repos {
+		repoPath := "./repos/" + repo.GetName()
+		err := filepath.Walk(repoPath, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			wrtie, err := write.Create(path)
+			if err != nil {
+				return err
+			}
+
+			_, err = io.Copy(wrtie, file)
+			return err
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
