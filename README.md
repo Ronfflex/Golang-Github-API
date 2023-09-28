@@ -9,9 +9,9 @@ repositories depuis Github, selon les critères ci-dessous.
 
 Les étudiants seront amenés à développer les fonctionnalités suivantes :
 Créer une application qui requête l’API Github pour récupérer:
-la liste de repositories d’un utilisateur,
+la liste de repositories d’un utilisateur, ✔️
 ou la liste de repositories d’une organisation,
-Trier ces repositories par dernière modification.
+Trier ces repositories par dernière modification. ✔️
 L’application doit récupérer au minimum TOUS les repositories spécifiés, ou au minimum les 100 derniers repositories par date de modification.
 L’application doit écrire un CSV de cette liste, avec l’ensemble des informations récupérées sur l’API.
 L’application doit cloner ces repositories en local.
