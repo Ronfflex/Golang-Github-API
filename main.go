@@ -66,13 +66,16 @@ func main() {
 
 func getClientRepositories(username string) []*github.Repository {
 	githubToken := os.Getenv("GITHUB_TOKEN")
-	if githubToken == "" {
-		log.Fatal("GITHUB_TOKEN is not set")
-	}
 	client := github.NewClient(nil).WithAuthToken(githubToken)
 
 	var allRepos []*github.Repository
-	opt := &github.RepositoryListOptions{Type: "public", ListOptions: github.ListOptions{PerPage: 100}}
+
+	repoType := "public"
+	if githubToken != "" {
+		repoType = "all"
+	}
+
+	opt := &github.RepositoryListOptions{Type: repoType, ListOptions: github.ListOptions{PerPage: 100}}
 	for {
 		repos, response, err := client.Repositories.List(context.Background(), username, opt)
 		if err != nil {
