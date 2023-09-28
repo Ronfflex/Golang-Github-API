@@ -27,7 +27,7 @@ func main() {
 	fmt.Println("Github Repositories for " + github_username + " :")
 	repos := getClientRepositories(github_username)
 	for _, repo := range repos {
-		fmt.Println(repo)
+		fmt.Println(*repo.Name)
 	}
 
 	fmt.Println("Storing in CSV file...")
@@ -59,11 +59,6 @@ func getClientRepositories(username string) []*github.Repository {
 		return allRepos[i].GetUpdatedAt().Time.After(allRepos[j].GetUpdatedAt().Time)
 	})
 
-	var repos []string
-	for _, repo := range allRepos {
-		repos = append(repos, *repo.Name)
-	}
-
 	return allRepos
 }
 
@@ -93,7 +88,9 @@ func storeInCSV(repos []*github.Repository) {
 			log.Fatal(err)
 		}
 	}
-	// if err := write.Error(); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err := write.Error(); err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println("CSV file created successfully")
+	}
 }
