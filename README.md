@@ -22,12 +22,12 @@ L’application doit créer une archive (ZIP ou 7z) de ces repositories à la fi
 Une fois déployée, la dApp aura comme fonctionnalités de :
 Spécifier le pseudo Github d’un utilisateur ou une organisation,✔️
 Lister et cloner les repositories publiques de l’utilisateur ou l’organisation,✔️
-Si un Token API Github est fourni, l’application doit en supplément cloner les repositories privés de l’utilisateur ou l’organisation,
-Rendre disponible le téléchargement de ces repositories via une API.
+Si un Token API Github est fourni, l’application doit en supplément cloner les repositories privés de l’utilisateur ou l’organisation,✔️
+Rendre disponible le téléchargement de ces repositories via une API.✔️
 
 L’utilisation des notions Golang suivantes est obligatoire :
-Webserver HTTP pour le téléchargement de l’archive,
-Goroutines & Waitgroups pour optimiser l’exécution du code.
+Webserver HTTP pour le téléchargement de l’archive,✔️
+Goroutines & Waitgroups pour optimiser l’exécution du code.✔️
 
 ## La dApp doit être Dockerisée afin de faciliter son déploiement.
 
