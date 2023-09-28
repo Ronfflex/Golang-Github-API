@@ -8,6 +8,9 @@
 *.so
 *.dylib
 
+.env
+.env.local
+
 # Test binary, built with `go test -c`
 *.test
 
@@ -19,5 +22,3 @@
 
 # Go workspace file
 go.work
-
-.env
