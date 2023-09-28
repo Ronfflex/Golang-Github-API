@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,42 +41,53 @@ func main() {
 	storeInCSV(repos)
 
 	fmt.Println("\nCloning repositories...")
-    var wg sync.WaitGroup
-    for _, repo := range repos {
-        wg.Add(1)
-        go func(r *github.Repository) {
-            defer wg.Done()
+	var wg sync.WaitGroup
+	for _, repo := range repos {
+		wg.Add(1)
+		go func(r *github.Repository) {
+			defer wg.Done()
 			cloneRepository(r)
-        }(repo)
-    }
-    wg.Wait()
+		}(repo)
+	}
+	wg.Wait()
 
-    fmt.Println("\nPulling latest branch...")
-    for _, repo := range repos {
-        wg.Add(1)
-        go func(r *github.Repository) {
-            defer wg.Done()
-            pullLatestBranch(r)
-        }(repo)
-    }
-    wg.Wait()
+	fmt.Println("\nPulling latest branch...")
+	for _, repo := range repos {
+		wg.Add(1)
+		go func(r *github.Repository) {
+			defer wg.Done()
+			pullLatestBranch(r)
+		}(repo)
+	}
+	wg.Wait()
 
-    fmt.Println("\nFetching all branches...")
-    for _, repo := range repos {
-        wg.Add(1)
-        go func(r *github.Repository) {
-            defer wg.Done()
-            fetchAllBranches(r)
-        }(repo)
-    }
-    wg.Wait()
+	fmt.Println("\nFetching all branches...")
+	for _, repo := range repos {
+		wg.Add(1)
+		go func(r *github.Repository) {
+			defer wg.Done()
+			fetchAllBranches(r)
+		}(repo)
+	}
+	wg.Wait()
 
 	err = zipRepositories(repos)
-    if err != nil {
+	if err != nil {
 		fmt.Println("Error creating zip archive:", err)
 	} else {
 		fmt.Println("Repositories successfully archived to repos.zip")
 	}
+
+	go startWebServer()
+	select {}
+}
+
+func startWebServer() {
+    http.HandleFunc("/download", handleDownload)
+    fmt.Println("Server started at :3000")
+    if err := http.ListenAndServe(":3000", nil); err != nil {
+        log.Fatalf("Failed to start server: %v", err)
+    }
 }
 
 func getClientRepositories(username string) []*github.Repository {
@@ -143,20 +155,20 @@ func storeInCSV(repos []*github.Repository) {
 }
 
 func cloneRepository(repo *github.Repository) {
-    path := "./repos/"
-    if _, err := os.Stat(path); os.IsNotExist(err) {
-        os.Mkdir(path, 0755)
-    }
+	path := "./repos/"
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.Mkdir(path, 0755)
+	}
 
-    repoURL := repo.GetCloneURL()
-    cmd := exec.Command("git", "clone", repoURL)
-    cmd.Dir = path
+	repoURL := repo.GetCloneURL()
+	cmd := exec.Command("git", "clone", repoURL)
+	cmd.Dir = path
 
-    if err := cmd.Run(); err != nil {
-        fmt.Println("Error cloning repository: " + repo.GetName() + " : " + repo.GetCloneURL())
-    } else {
-        fmt.Println("Repository cloned successfully: " + repo.GetName())
-    }
+	if err := cmd.Run(); err != nil {
+		fmt.Println("Error cloning repository: " + repo.GetName() + " : " + repo.GetCloneURL())
+	} else {
+		fmt.Println("Repository cloned successfully: " + repo.GetName())
+	}
 }
 
 func detectBranchOfLatestCommit(repo *github.Repository) string {
@@ -206,7 +218,7 @@ func zipRepositories(repos []*github.Repository) error {
 			return err
 		}
 	}
-	
+
 	zipFile, err := os.Create("repos.zip")
 	if err != nil {
 		return err
@@ -248,4 +260,16 @@ func zipRepositories(repos []*github.Repository) error {
 	}
 
 	return nil
+}
+
+func handleDownload(write http.ResponseWriter, read *http.Request) {
+	_, err := os.Stat("./repos.zip")
+	if os.IsNotExist(err) {
+		http.Error(write, "File not found", http.StatusNotFound)
+		return
+	}
+
+	write.Header().Set("Content-Disposition", "attachment; filename=repos.zip")
+	write.Header().Set("Content-Type", "application/zip")
+	http.ServeFile(write, read, "./repos.zip")
 }
