@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/dotenv-org/godotenvvault"
 	"github.com/google/go-github/v55/github"
@@ -36,6 +37,21 @@ func main() {
 
 	fmt.Println("\nCloning repositories...")
 	clonseRepositories(repos)
+
+	// fmt.Println("\nDetecting branch of latest commit...")
+	// for _, repo := range repos {
+	// 	latestBranch := detectBranchOfLatestCommit(repo)
+	// }
+
+	fmt.Println("\nPulling latest branch...")
+	for _, repo := range repos {
+		pullLatestBranch(repo)
+	}
+
+	fmt.Println("\nFetching all branches...")
+	for _, repo := range repos {
+		fetchAllBranches(repo)
+	}
 }
 
 func getClientRepositories(username string) []*github.Repository {
@@ -116,5 +132,45 @@ func clonseRepositories(repos []*github.Repository) {
 		} else {
 			fmt.Println("Repository cloned successfully: " + repo.GetName())
 		}
+	}
+}
+
+func detectBranchOfLatestCommit(repo *github.Repository) string {
+	path := "./repos/" + repo.GetName()
+	cmd := exec.Command("git", "for-each-ref", "--sort=-committerdate", "--count=1", "--format='%(refname:short)'", "refs/heads/")
+	cmd.Dir = path
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error detecting branch of latest commit: " + repo.GetName())
+		return ""
+	}
+	
+	branch := strings.TrimSpace(string(output))
+	fmt.Println("Branch of latest commit for " + repo.GetName() + ": " + branch)
+	return branch
+}
+
+func pullLatestBranch(repo *github.Repository) {
+	path := "./repos/" + repo.GetName()
+	cmd := exec.Command("git", "pull")
+	cmd.Dir = path
+
+	if err := cmd.Run(); err != nil {
+		fmt.Println("Error pulling latest branch: " + repo.GetName())
+	} else {
+		fmt.Println("Latest branch pulled successfully: " + repo.GetName())
+	}
+}
+
+func fetchAllBranches(repo *github.Repository) {
+	path := "./repos/" + repo.GetName()
+	cmd := exec.Command("git", "fetch", "--all")
+	cmd.Dir = path
+
+	if err := cmd.Run(); err != nil {
+		fmt.Println("Error fetching all branches: " + repo.GetName())
+	} else {
+		fmt.Println("All branches fetched successfully: " + repo.GetName())
 	}
 }

@@ -15,8 +15,8 @@ Trier ces repositories par dernière modification. ✔️
 L’application doit récupérer au minimum TOUS les repositories spécifiés, ou au minimum les 100 derniers repositories par date de modification. ✔️
 L’application doit écrire un CSV de cette liste, avec l’ensemble des informations récupérées sur l’API. ✔️
 L’application doit cloner ces repositories en local. ✔️
-L’application doit exécuter un Git Pull sur la dernière branche modifiée (dernier commit) en local.
-L’application doit aussi exécuter un Git Fetch pour récupérer toutes les références de branches en local.
+L’application doit exécuter un Git Pull sur la dernière branche modifiée (dernier commit) en local. ✔️
+L’application doit aussi exécuter un Git Fetch pour récupérer toutes les références de branches en local. ✔️
 L’application doit créer une archive (ZIP ou 7z) de ces repositories à la fin du traitement en local.
 
 Une fois déployée, la dApp aura comme fonctionnalités de :
