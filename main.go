@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/dotenv-org/godotenvvault"
 	"github.com/google/go-github/v55/github"
@@ -39,22 +40,35 @@ func main() {
 	storeInCSV(repos)
 
 	fmt.Println("\nCloning repositories...")
-	clonseRepositories(repos)
+    var wg sync.WaitGroup
+    for _, repo := range repos {
+        wg.Add(1)
+        go func(r *github.Repository) {
+            defer wg.Done()
+			cloneRepository(r)
+        }(repo)
+    }
+    wg.Wait()
 
-	// fmt.Println("\nDetecting branch of latest commit...")
-	// for _, repo := range repos {
-	// 	latestBranch := detectBranchOfLatestCommit(repo)
-	// }
+    fmt.Println("\nPulling latest branch...")
+    for _, repo := range repos {
+        wg.Add(1)
+        go func(r *github.Repository) {
+            defer wg.Done()
+            pullLatestBranch(r)
+        }(repo)
+    }
+    wg.Wait()
 
-	fmt.Println("\nPulling latest branch...")
-	for _, repo := range repos {
-		pullLatestBranch(repo)
-	}
-
-	fmt.Println("\nFetching all branches...")
-	for _, repo := range repos {
-		fetchAllBranches(repo)
-	}
+    fmt.Println("\nFetching all branches...")
+    for _, repo := range repos {
+        wg.Add(1)
+        go func(r *github.Repository) {
+            defer wg.Done()
+            fetchAllBranches(r)
+        }(repo)
+    }
+    wg.Wait()
 
 	err = zipRepositories(repos)
     if err != nil {
@@ -128,24 +142,21 @@ func storeInCSV(repos []*github.Repository) {
 	}
 }
 
-func clonseRepositories(repos []*github.Repository) {
-	path := "./repos/"
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Mkdir(path, 0755)
-	}
+func cloneRepository(repo *github.Repository) {
+    path := "./repos/"
+    if _, err := os.Stat(path); os.IsNotExist(err) {
+        os.Mkdir(path, 0755)
+    }
 
-	for _, repo := range repos {
-		repoURL := repo.GetCloneURL()
+    repoURL := repo.GetCloneURL()
+    cmd := exec.Command("git", "clone", repoURL)
+    cmd.Dir = path
 
-		cmd := exec.Command("git", "clone", repoURL)
-		cmd.Dir = path
-
-		if err := cmd.Run(); err != nil {
-			fmt.Println("Error cloning repository: " + repo.GetName() + " : " + repo.GetCloneURL())
-		} else {
-			fmt.Println("Repository cloned successfully: " + repo.GetName())
-		}
-	}
+    if err := cmd.Run(); err != nil {
+        fmt.Println("Error cloning repository: " + repo.GetName() + " : " + repo.GetCloneURL())
+    } else {
+        fmt.Println("Repository cloned successfully: " + repo.GetName())
+    }
 }
 
 func detectBranchOfLatestCommit(repo *github.Repository) string {
