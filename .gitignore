@@ -11,6 +11,8 @@
 .env
 .env.local
 
+/repos/*
+
 # Test binary, built with `go test -c`
 *.test
 

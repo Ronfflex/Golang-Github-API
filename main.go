@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 	"strconv"
 
@@ -27,11 +28,14 @@ func main() {
 	fmt.Println("Github Repositories for " + github_username + " :")
 	repos := getClientRepositories(github_username)
 	for _, repo := range repos {
-		fmt.Println(*repo.Name)
+		fmt.Println(repo.GetName())
 	}
 
-	fmt.Println("Storing in CSV file...")
+	fmt.Println("\nStoring in CSV file...")
 	storeInCSV(repos)
+
+	fmt.Println("\nCloning repositories...")
+	clonseRepositories(repos)
 }
 
 func getClientRepositories(username string) []*github.Repository {
@@ -92,5 +96,25 @@ func storeInCSV(repos []*github.Repository) {
 		log.Fatal(err)
 	} else {
 		fmt.Println("CSV file created successfully")
+	}
+}
+
+func clonseRepositories(repos []*github.Repository) {
+	path := "./repos/"
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+        os.Mkdir(path, 0755)
+    }
+
+	for _, repo := range repos {
+		repoURL := repo.GetCloneURL()
+		
+		cmd := exec.Command("git", "clone", repoURL)
+		cmd.Dir = path
+
+		if err := cmd.Run(); err != nil {
+			fmt.Println("Error cloning repository: " + repo.GetName() + " : " + repo.GetCloneURL())
+		} else {
+			fmt.Println("Repository cloned successfully: " + repo.GetName())
+		}
 	}
 }
